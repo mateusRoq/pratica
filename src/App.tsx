@@ -1,34 +1,37 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, {useState} from "react";
+import SearchForm from "./components/SearchForm";
+import RepositoryList from "./components/RepositoryList";
+import { searchRepositories } from "./services/github";
+import { Repository } from "./types/github";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App: React.FC = () => {
+  const [repositories, setRepositories] = useState<Repository[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+  const handleSearch = async (query: string) => {
+    setLoading(true)
+    setError(null)
+    try{
+      const result = await searchRepositories(query)
+      setRepositories(result.items)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Um erro desconhecido ocorreu"
+      setError(`Erro ao buscar repositórios: ${errorMessage}. Por favor, tente novamente.`)
+      setRepositories([])
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  return(
+    <div>
+      <h1>Pesquisa de Repositórios GItHUb</h1>
+      <SearchForm onSearch={handleSearch}/>
+      {loading && <p>Carregando...</p>}
+      {error && <p>{error}</p>}
+      {!loading && !error && <RepositoryList repositories={repositories}/>}
+    </div>
   )
 }
 
